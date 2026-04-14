@@ -1,0 +1,6 @@
+{
+  "name": "Stream Story: Character Counter",
+  "description": "An interactive, animated visualization of Java Stream API code for counting character occurrences and finding repeats.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
