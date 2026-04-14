@@ -28,7 +28,9 @@ import {
   Copy,
   AlertTriangle,
   List,
-  LayoutGrid
+  LayoutGrid,
+  FileCode,
+  Activity
 } from "lucide-react";
 
 interface SceneData {
@@ -1421,6 +1423,149 @@ map.put(1, "Python"); // Overwrites "Java"`,
         )
       }
     ]
+  },
+  {
+    id: "java8-features",
+    title: "Java 8: Streams & Lambdas",
+    description: "Visualize the power of functional programming in Java 8.",
+    fullCode: `// Stream API: Filter & Process
+List<Integer> payments = Arrays.asList(100, 200, 5000, 7000);
+
+payments.stream()
+        .filter(p -> p > 1000)
+        .forEach(System.out::println);
+
+// Optional: Avoid Nulls
+Optional<String> user = Optional.ofNullable(getUser());
+user.ifPresent(u -> System.out.println(u));`,
+    scenes: [
+      {
+        id: "streams",
+        title: "Scene 1: Stream Pipeline",
+        code: "stream().filter(p > 1000)",
+        description: "Data flows through a pipeline of operations. Only elements matching the filter pass through.",
+        icon: <Filter className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex gap-2">
+              {[500, 2000, 800, 5000].map((val, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    y: val > 1000 ? [0, 50] : [0, 20],
+                    opacity: val > 1000 ? [1, 1] : [1, 0]
+                  }}
+                  transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
+                  className="w-10 h-10 bg-white border-2 border-brand rounded flex items-center justify-center font-bold text-[10px]"
+                >
+                  {val}
+                </motion.div>
+              ))}
+            </div>
+            <div className="w-48 h-1 bg-brand/20 relative">
+               <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 px-2 py-0.5 bg-brand text-white text-[6px] font-black rounded">FILTER {">"} 1000</div>
+            </div>
+            <div className="flex gap-2 mt-8">
+               <div className="w-10 h-10 border-2 border-dashed border-brand/20 rounded flex items-center justify-center text-[8px] text-gray-400">Filtered</div>
+            </div>
+          </div>
+        )
+      },
+      {
+        id: "optional",
+        title: "Scene 2: Optional Safety",
+        code: "Optional.ofNullable(user)",
+        description: "A container object which may or may not contain a non-null value. Prevents NPE.",
+        icon: <Lock className="w-6 h-6" />,
+        visual: (
+          <div className="flex items-center gap-8">
+            <div className="flex flex-col items-center gap-2">
+               <div className="p-2 bg-gray-100 rounded text-[8px] font-bold">null</div>
+               <ArrowRight className="w-4 h-4 text-brand" />
+               <div className="w-12 h-12 border-2 border-brand rounded-full flex items-center justify-center text-[8px] font-black text-gray-400">EMPTY</div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+               <div className="p-2 bg-accent/20 border border-brand rounded text-[8px] font-bold">"Asif"</div>
+               <ArrowRight className="w-4 h-4 text-brand" />
+               <div className="w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center text-[8px] font-black">VALUE</div>
+            </div>
+          </div>
+        )
+      }
+    ]
+  },
+  {
+    id: "java21-features",
+    title: "Java 21: Virtual Threads",
+    description: "Visualize high-scalability concurrency with Virtual Threads.",
+    fullCode: `// Virtual Threads: Millions of tasks
+Thread.startVirtualThread(() -> {
+    System.out.println("Processing payment...");
+});
+
+// Pattern Matching for switch
+switch (payment) {
+    case UPI u -> System.out.println("UPI: " + u.id());
+    case Card c -> System.out.println("Card: " + c.number());
+}`,
+    scenes: [
+      {
+        id: "virtual-threads",
+        title: "Scene 1: Virtual vs Platform Threads",
+        code: "Thread.startVirtualThread(task)",
+        description: "Virtual threads are lightweight and mapped to OS threads by the JVM. Handle millions of tasks.",
+        icon: <Activity className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex gap-1">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ height: [10, 20, 10] }}
+                  transition={{ repeat: Infinity, duration: 1, delay: i * 0.1 }}
+                  className="w-1 bg-brand rounded-full"
+                />
+              ))}
+            </div>
+            <div className="p-3 bg-accent border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black">
+              10,000+ VIRTUAL THREADS
+            </div>
+            <div className="w-px h-8 bg-brand border-dashed" />
+            <div className="flex gap-4">
+               <div className="w-8 h-8 bg-brand rounded flex items-center justify-center text-white text-[8px] font-bold">OS 1</div>
+               <div className="w-8 h-8 bg-brand rounded flex items-center justify-center text-white text-[8px] font-bold">OS 2</div>
+            </div>
+          </div>
+        )
+      },
+      {
+        id: "pattern-matching",
+        title: "Scene 2: Pattern Matching",
+        code: "case UPI u -> ...",
+        description: "Cleaner switch expressions with automatic casting and extraction.",
+        icon: <Zap className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex gap-4">
+               <motion.div 
+                whileHover={{ scale: 1.1 }}
+                className="p-3 bg-white border-2 border-brand rounded-xl font-bold text-[10px]"
+               >
+                 Object obj = new UPI();
+               </motion.div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-brand rotate-90" />
+            <div className="p-4 bg-accent border-2 border-brand rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+               <div className="text-[10px] font-mono">
+                 <span className="text-blue-600">case</span> UPI u -{">"} <br/>
+                 <span className="text-gray-400">// u is already casted!</span><br/>
+                 process(u.id());
+               </div>
+            </div>
+          </div>
+        )
+      }
+    ]
   }
 ];
 
@@ -2231,6 +2376,121 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]`}</pre>
           <p className="text-xs opacity-80 leading-relaxed">
             "In most real-world scenarios, <strong>ArrayList</strong> is preferred over LinkedList because it has better cache locality and random access performance. LinkedList is only better if you are doing constant-time insertions/deletions at the ends of the list."
           </p>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "java-evolution",
+    title: "Java Evolution (8-21)",
+    category: "Java Core",
+    icon: <FileCode className="w-5 h-5" />,
+    answer: (
+      <div className="space-y-10">
+        <div className="p-4 bg-accent/10 border-l-4 border-accent rounded-r-xl">
+          <p className="font-medium">Java has evolved from a verbose language to a modern, functional, and highly scalable one. Understanding features from 8 to 21 is critical for modern <strong>Payment Gateway</strong> development.</p>
+        </div>
+
+        {/* Java 8 */}
+        <div className="space-y-4">
+          <h4 className="text-xl font-black text-brand flex items-center gap-2">
+            <span className="bg-brand text-accent px-2 py-0.5 rounded text-sm">Java 8</span>
+            The Functional Revolution 🔥
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-white border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-sm mb-2">Lambda & Streams</p>
+              <p className="text-[10px] text-gray-600 mb-2">Process collections like a pro. Filter, map, and reduce with zero boilerplate.</p>
+              <code className="block text-[9px] bg-bg p-2 rounded font-mono">
+                payments.stream().filter(p -{">"} p {">"} 1000).collect(...)
+              </code>
+            </div>
+            <div className="p-4 bg-white border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-sm mb-2">Optional & Date API</p>
+              <p className="text-[10px] text-gray-600 mb-2">Kill NullPointerExceptions and handle timestamps properly for transactions.</p>
+              <code className="block text-[9px] bg-bg p-2 rounded font-mono">
+                Optional.ofNullable(user); LocalDateTime.now();
+              </code>
+            </div>
+          </div>
+        </div>
+
+        {/* Java 9-17 */}
+        <div className="space-y-4">
+          <h4 className="text-xl font-black text-brand flex items-center gap-2">
+            <span className="bg-brand text-accent px-2 py-0.5 rounded text-sm">Java 9-17</span>
+            Modern Syntax & Safety
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-white border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-xs mb-1">var (J10)</p>
+              <p className="text-[9px] text-gray-500">Local variable type inference.</p>
+            </div>
+            <div className="p-4 bg-white border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-xs mb-1">Records (J16)</p>
+              <p className="text-[9px] text-gray-500">Immutable data classes for DTOs.</p>
+            </div>
+            <div className="p-4 bg-white border-2 border-brand rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="font-bold text-xs mb-1">Sealed (J17)</p>
+              <p className="text-[9px] text-gray-500">Restrict class inheritance hierarchy.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Java 21 */}
+        <div className="space-y-4">
+          <h4 className="text-xl font-black text-brand flex items-center gap-2">
+            <span className="bg-brand text-accent px-2 py-0.5 rounded text-sm">Java 21</span>
+            High Scalability 🚀
+          </h4>
+          <div className="p-6 bg-accent border-2 border-brand rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h5 className="font-black text-lg mb-2">Virtual Threads (Project Loom)</h5>
+            <p className="text-xs font-medium mb-4">Lightweight threads that allow handling millions of concurrent requests without blocking OS threads. Perfect for high-traffic payment gateways.</p>
+            <div className="bg-white/50 p-3 rounded-xl font-mono text-[10px] border border-brand/20">
+              Thread.startVirtualThread(() -{">"} processPayment());
+            </div>
+          </div>
+        </div>
+
+        {/* Real World Flow */}
+        <div className="bg-brand text-white p-6 rounded-2xl">
+          <h4 className="font-bold mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-accent" />
+            Modern Payment Flow (J8-21)
+          </h4>
+          <div className="space-y-3 text-[10px]">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-accent text-brand rounded-full flex items-center justify-center font-black">1</div>
+              <p><strong>Stream API:</strong> Filter incoming transaction batch.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-accent text-brand rounded-full flex items-center justify-center font-black">2</div>
+              <p><strong>Optional:</strong> Handle potentially null user profile.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-accent text-brand rounded-full flex items-center justify-center font-black">3</div>
+              <p><strong>Virtual Threads:</strong> Process 10k parallel bank API calls.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-accent text-brand rounded-full flex items-center justify-center font-black">4</div>
+              <p><strong>Records:</strong> Store final immutable transaction state.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-bg rounded-xl border border-brand/5">
+            <h4 className="font-bold text-sm mb-2 text-brand">Interview Key Points</h4>
+            <ul className="text-xs space-y-1 text-gray-600">
+              <li>• <strong>Java 8:</strong> Functional programming foundation.</li>
+              <li>• <strong>Java 17:</strong> Current LTS, focus on safety (Sealed/Records).</li>
+              <li>• <strong>Java 21:</strong> Massive scalability with Virtual Threads.</li>
+            </ul>
+          </div>
+          <div className="p-4 bg-bg rounded-xl border border-brand/5">
+            <h4 className="font-bold text-sm mb-2 text-brand">Pro Tip</h4>
+            <p className="text-xs text-gray-600 italic">"Always mention Virtual Threads when asked about Java 21. It's the biggest change in Java's concurrency model in 20 years."</p>
+          </div>
         </div>
       </div>
     )
