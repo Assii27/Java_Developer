@@ -30,7 +30,17 @@ import {
   List,
   LayoutGrid,
   FileCode,
-  Activity
+  Activity,
+  Server,
+  Workflow,
+  Bug,
+  TrendingUp,
+  Maximize,
+  Repeat,
+  MessageSquare,
+  ShieldCheck,
+  Send,
+  UserCheck
 } from "lucide-react";
 
 interface SceneData {
@@ -1569,6 +1579,379 @@ switch (payment) {
   }
 ];
 
+const SCENARIO_QUESTIONS: CodingQuestion[] = [
+  {
+    id: "project-architecture",
+    title: "Scenario 1: Project Architecture",
+    description: "Walk through a typical Card Management System (CMS) microservices architecture.",
+    fullCode: `// Architecture Context: Fintech CMS
+// Microservices based with Event-Driven flavor
+
+// API Gateway config (Spring Cloud Gateway)
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: card-service
+          uri: lb://CARD-SERVICE
+          predicates:
+            - Path=/card/**
+
+// Redis Caching
+@Cacheable(value = "cardCache", key = "#cardId")
+public Card getCardDetails(Long cardId) {
+    return cardRepository.findById(cardId).orElseThrow();
+}
+
+// Kafka Producer
+@Autowired
+private KafkaTemplate<String, String> kafkaTemplate;
+
+public void publishTransactionEvent(String event) {
+    kafkaTemplate.send("transaction-topic", event);
+}`,
+    scenes: [
+      {
+        id: "arch-overview",
+        title: "Scene 1: System Overview",
+        code: "Client -> Gateway -> Service",
+        description: "A secure entry point routing requests to specific business services.",
+        icon: <Server className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-4">
+            <div className="p-3 bg-white border-2 border-brand rounded shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold">Client (Web/Mobile)</div>
+            <ArrowRight className="w-4 h-4 text-brand rotate-90" />
+            <div className="p-4 bg-brand text-white rounded-xl shadow-[6px_6px_0px_0px_#00FF00] font-black text-xs uppercase tracking-widest">API Gateway</div>
+            <div className="flex gap-4 mt-2">
+               {["Auth", "Card", "Txn"].map(s => (
+                 <div key={s} className="px-3 py-1.5 bg-accent/20 border-2 border-brand rounded text-[8px] font-black">{s} Svc</div>
+               ))}
+            </div>
+          </div>
+        )
+      },
+      {
+        id: "arch-layers",
+        title: "Scene 2: Data & Messaging Layers",
+        code: "MySQL + Redis + Kafka",
+        description: "Combining persistent storage, fast caching, and asynchronous event streaming.",
+        icon: <Layers className="w-6 h-6" />,
+        visual: (
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+               <div className="p-2 bg-yellow-100 border border-brand rounded flex gap-2 items-center">
+                  <Database className="w-4 h-4 text-brand" />
+                  <span className="text-[10px] font-bold">MySQL</span>
+               </div>
+               <div className="p-2 bg-red-100 border border-brand rounded flex gap-2 items-center">
+                  <Zap className="w-4 h-4 text-brand" />
+                  <span className="text-[10px] font-bold">Redis Cache</span>
+               </div>
+            </div>
+            <div className="p-4 bg-accent/30 border-2 border-dashed border-brand rounded-2xl flex flex-col justify-center items-center">
+               <Workflow className="w-8 h-8 text-brand mb-2 animate-pulse" />
+               <span className="text-[10px] font-black uppercase">Kafka Queue</span>
+            </div>
+          </div>
+        )
+      }
+    ]
+  },
+  {
+    id: "complex-feature",
+    title: "Scenario 2: Most Complex Feature",
+    description: "End-to-End Real-time Card Transaction Processing flow.",
+    fullCode: `@Transactional
+public String process(TransactionRequest request) {
+    // 1. Idempotency check (Anti-Duplicate)
+    if(transactionRepository.existsByReferenceId(request.getReferenceId())) {
+        return "Duplicate Transaction";
+    }
+
+    // 2. Fetch & Validate
+    Card card = cardRepository.findById(request.getCardId()).orElseThrow();
+    if(!card.isActive() || card.getBalance() < request.getAmount()) {
+        throw new RuntimeException("Invalid State");
+    }
+
+    // 3. Deduct with Optimistic Locking
+    card.setBalance(card.getBalance() - request.getAmount());
+    transactionRepository.save(new Transaction(request));
+
+    // 4. Async Notification
+    kafkaTemplate.send("txn-topic", "Success");
+    return "Success";
+}`,
+    scenes: [
+      {
+        id: "txn-validation",
+        title: "Scene 1: Request Validation",
+        code: "Idempotency + Status Check",
+        description: "Checking if the request was already processed and validating card/balance state.",
+        icon: <ShieldCheck className="w-6 h-6" />,
+        visual: (
+          <div className="flex items-center gap-4">
+            <motion.div 
+              animate={{ x: [0, 100], opacity: [1, 1, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="p-2 bg-white border border-brand rounded text-[8px] font-bold"
+            >
+              Txn Req
+            </motion.div>
+            <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center border-2 border-brand">
+               <Lock className="w-6 h-6 text-brand" />
+            </div>
+            <div className="text-left">
+               <div className="text-[8px] font-bold flex gap-1 items-center">
+                  <CheckCircle2 className="w-3 h-3 text-green-500" /> Card Active
+               </div>
+               <div className="text-[8px] font-bold flex gap-1 items-center mt-1">
+                  <CheckCircle2 className="w-3 h-3 text-green-500" /> Balance OK
+               </div>
+            </div>
+          </div>
+        )
+      },
+      {
+        id: "txn-consistency",
+        title: "Scene 2: Atomic Consistency",
+        code: "@Version for Optimistic Lock",
+        description: "Using versioning to prevent data overrides in high-concurrency environments.",
+        icon: <Repeat className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex gap-8">
+               <div className="flex flex-col items-center">
+                  <span className="text-[6px] font-black">USER A</span>
+                  <div className="w-12 h-1 bg-brand" />
+               </div>
+               <div className="flex flex-col items-center">
+                  <span className="text-[6px] font-black">USER B</span>
+                  <div className="w-12 h-1 bg-accent" />
+               </div>
+            </div>
+            <motion.div 
+              animate={{ rotate: [0, 360] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              className="p-4 bg-white border-2 border-brand rounded-xl relative"
+            >
+               <span className="text-xs font-black">VERSION: 42</span>
+               <div className="absolute -top-2 -right-2 w-4 h-4 bg-accent border border-brand rounded-full animate-bounce" />
+            </motion.div>
+            <p className="text-[10px] font-bold text-brand italic">Wait {"->"} Compare {"->"} Swap</p>
+          </div>
+        )
+      }
+    ]
+  },
+  {
+    id: "production-bug",
+    title: "Scenario 3: Production Bug & RCA",
+    description: "Root Cause Analysis (RCA) and fix for duplicate transaction entries.",
+    fullCode: `// THE BUG: Duplicate entries processed due to retries
+// RCA: No application-level idempotency
+
+// THE FIX (Step 1): Primary Key Constraint
+ALTER TABLE transaction ADD CONSTRAINT unique_ref UNIQUE (reference_id);
+
+// THE FIX (Step 2): Application Check
+boolean exists = repo.existsByReferenceId(id);
+if(exists) return ERROR;`,
+    scenes: [
+      {
+        id: "bug-visualization",
+        title: "Scene 1: The Duplicate Attack",
+        code: "Payment Gateway Retries",
+        description: "Network jitter causes the gateway to retry, sending the same reference ID twice.",
+        icon: <Bug className="w-6 h-6" />,
+        visual: (
+          <div className="relative">
+            <motion.div 
+               animate={{ x: [0, 50], opacity: [1, 0] }}
+               transition={{ repeat: Infinity, duration: 1 }}
+               className="p-2 bg-red-100 border border-red-500 rounded text-[8px] font-bold absolute left-0"
+            >
+               REF_001
+            </motion.div>
+            <motion.div 
+               animate={{ x: [0, 50], opacity: [1, 0] }}
+               transition={{ repeat: Infinity, duration: 1, delay: 0.5 }}
+               className="p-2 bg-red-100 border border-red-500 rounded text-[8px] font-bold absolute left-10"
+            >
+               REF_001
+            </motion.div>
+            <div className="ml-32 p-4 bg-white border-2 border-brand rounded flex items-center justify-center">
+               <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" />
+            </div>
+          </div>
+        )
+      },
+      {
+        id: "bug-fix",
+        title: "Scene 2: Idempotency Wall",
+        code: "Rejected By Constraint",
+        description: "A combination of application checks and DB constraints blocks duplicates.",
+        icon: <ShieldCheck className="w-6 h-6" />,
+        visual: (
+          <div className="flex items-center gap-4">
+             <div className="p-2 bg-white border border-brand rounded text-[8px] font-bold">REF_001</div>
+             <ArrowRight className="w-4 h-4 text-brand" />
+             <div className="w-12 h-20 bg-accent border-2 border-brand rounded-xl flex items-center justify-center relative">
+                <div className="absolute top-1/2 left-0 w-full h-px bg-brand" />
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  className="bg-red-500 text-white p-1 rounded-full"
+                >
+                  <Lock className="w-4 h-4" />
+                </motion.div>
+             </div>
+             <span className="text-[10px] font-black text-red-500 uppercase">Blocked</span>
+          </div>
+        )
+      }
+    ]
+  },
+  {
+    id: "api-optimization",
+    title: "Scenario 4: Performance Optimization",
+    description: "How to reduce transaction history latency from 2.5s to 300ms.",
+    fullCode: `// BEFORE: N+1 issue, multiple joins, full scan
+// AFTER: Indexing + DTO Projection
+
+// Optimized DTO Projection
+@Query("SELECT new com.dto.TransactionDTO(t.id, t.amount, t.date) " +
+       "FROM Transaction t WHERE t.userId = :userId ORDER BY t.date DESC")
+Page<TransactionDTO> getTransactions(@Param("userId") Long userId, Pageable pageable);
+
+// Database Index
+CREATE INDEX idx_user_date ON transactions(user_id, transaction_date);`,
+    scenes: [
+      {
+        id: "slow-query",
+        title: "Scene 1: The Bottleneck",
+        code: "Lat: 2500ms | Joins: 4+",
+        description: "Fetching full entities with multiple joins causes heavy memory overhead.",
+        icon: <TrendingUp className="w-6 h-6 text-red-500 rotate-180" />,
+        visual: (
+          <div className="w-48 h-24 bg-red-100 border-2 border-red-500 rounded-xl relative overflow-hidden">
+             <motion.div 
+               animate={{ x: [-100, 200] }}
+               transition={{ repeat: Infinity, duration: 3 }}
+               className="absolute top-0 bottom-0 w-1 bg-red-500/20"
+             />
+             <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                <span className="text-[8px] font-bold opacity-50">SCANNING 10M ROWS...</span>
+                <div className="w-32 h-2 bg-gray-300 rounded mt-2">
+                   <motion.div 
+                     animate={{ width: ["0%", "100%", "0%"] }}
+                     transition={{ repeat: Infinity, duration: 4 }}
+                     className="h-full bg-red-500 rounded"
+                   />
+                </div>
+             </div>
+          </div>
+        )
+      },
+      {
+        id: "fast-query",
+        title: "Scene 2: Lean Results",
+        code: "Lat: 300ms | DTO Projection",
+        description: "Only fetching required fields (ID, Amount, Date) drastically reduces latency.",
+        icon: <TrendingUp className="w-6 h-6 text-green-500" />,
+        visual: (
+          <div className="flex gap-2">
+             {Array.from({ length: 5 }).map((_, i) => (
+               <motion.div 
+                 key={i}
+                 initial={{ opacity: 0, x: -10 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 transition={{ delay: i * 0.1 }}
+                 className="p-2 bg-green-50 border border-brand rounded"
+               >
+                  <div className="w-4 h-1 bg-brand mb-1 rounded" />
+                  <div className="w-6 h-1 bg-accent rounded" />
+               </motion.div>
+             ))}
+             <div className="flex flex-col gap-1 items-center justify-center ml-2">
+                <span className="text-[10px] font-black text-green-600">-80%</span>
+                <span className="text-[6px] font-bold uppercase">Time</span>
+             </div>
+          </div>
+        )
+      }
+    ]
+  },
+  {
+    id: "scaling-scenario",
+    title: "Scenario 5: Scaling 10x Users",
+    description: "Strategies to handle massive traffic spikes in a distributed system.",
+    fullCode: `// 1. Horizontal Scaling (Docker Replicas)
+services:
+  card-service:
+    deploy:
+      replicas: 10
+
+// 2. Read Scalability
+// Setup Read Replicas for MySQL
+
+// 3. Caching Strategy
+@Cacheable(value = "session", key = "#id")
+public User fetch(String id) { ... }
+
+// 4. Kafka Partitioning
+// Increase partitions for higher throughput`,
+    scenes: [
+      {
+        id: "replica-scaling",
+        title: "Scene 1: Replica Sets",
+        code: "Docker/K8s Scaling",
+        description: "Moving from 1 instance to 10+ using automatic container orchestration.",
+        icon: <Maximize className="w-6 h-6" />,
+        visual: (
+          <div className="grid grid-cols-4 gap-2">
+             {Array.from({ length: 8 }).map((_, i) => (
+               <motion.div 
+                 key={i}
+                 initial={{ scale: 0 }}
+                 whileInView={{ scale: 1 }}
+                 transition={{ delay: i * 0.05 }}
+                 className="w-8 h-8 bg-brand rounded flex items-center justify-center text-white text-[8px] font-bold shadow-[2px_2px_0px_0px_#00FF00]"
+               >
+                  SVC
+               </motion.div>
+             ))}
+          </div>
+        )
+      },
+      {
+        id: "distributed-infra",
+        title: "Scene 2: Distributed Infrastructure",
+        code: "ELB + Redis + Sharding",
+        description: "Balance load and shard data to avoid single-point failure/bottlenecks.",
+        icon: <Globe className="w-6 h-6" />,
+        visual: (
+          <div className="flex flex-col items-center gap-4">
+             <div className="w-32 h-6 bg-brand rounded-full flex items-center justify-center">
+                <span className="text-[8px] text-white font-black">LOAD BALANCER</span>
+             </div>
+             <div className="flex gap-4">
+                <div className="p-2 border border-brand rounded flex flex-col items-center">
+                   <div className="w-4 h-4 bg-accent rounded-full mb-1" />
+                   <span className="text-[6px] font-bold italic">Region A</span>
+                </div>
+                <div className="p-2 border border-brand rounded flex flex-col items-center">
+                   <div className="w-4 h-4 bg-accent rounded-full mb-1" />
+                   <span className="text-[6px] font-bold italic">Region B</span>
+                </div>
+             </div>
+          </div>
+        )
+      }
+    ]
+  }
+];
+
 const THEORY_QUESTIONS: TheoryQuestion[] = [
   {
     id: "jvm-memory",
@@ -2498,12 +2881,14 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]`}</pre>
 ];
 
 export default function App() {
-  const [activeSection, setActiveSection] = useState<"coding" | "theory">("coding");
+  const [activeSection, setActiveSection] = useState<"coding" | "theory" | "scenarios">("coding");
   const [activeCodingId, setActiveCodingId] = useState(CODING_QUESTIONS[0].id);
   const [activeTheoryId, setActiveTheoryId] = useState(THEORY_QUESTIONS[0].id);
+  const [activeScenarioId, setActiveScenarioId] = useState(SCENARIO_QUESTIONS[0].id);
 
   const activeCoding = CODING_QUESTIONS.find(q => q.id === activeCodingId)!;
   const activeTheory = THEORY_QUESTIONS.find(q => q.id === activeTheoryId)!;
+  const activeScenario = SCENARIO_QUESTIONS.find(q => q.id === activeScenarioId)!;
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">
@@ -2539,6 +2924,15 @@ export default function App() {
               <BookOpen className="w-4 h-4" />
               Interview Theory Que
             </button>
+            <button
+              onClick={() => setActiveSection("scenarios")}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all ${
+                activeSection === "scenarios" ? "bg-brand text-white shadow-lg" : "text-gray-500 hover:text-brand"
+              }`}
+            >
+              <Workflow className="w-4 h-4" />
+              Scenario Base Que
+            </button>
           </nav>
         </div>
       </header>
@@ -2548,7 +2942,7 @@ export default function App() {
         <aside className="w-full md:w-80 bg-white border-r-2 border-brand flex flex-col">
           <div className="p-6 border-b border-brand/10">
             <h2 className="text-xs uppercase tracking-widest font-black text-gray-400 mb-4">
-              {activeSection === "coding" ? "Coding Challenges" : "Theory Topics"}
+              {activeSection === "coding" ? "Coding Challenges" : activeSection === "theory" ? "Theory Topics" : "Real-World Scenarios"}
             </h2>
             <div className="space-y-2">
               {activeSection === "coding" ? (
@@ -2569,7 +2963,7 @@ export default function App() {
                     <ChevronRight className={`w-4 h-4 ${activeCodingId === q.id ? "text-brand" : "text-gray-300"}`} />
                   </button>
                 ))
-              ) : (
+              ) : activeSection === "theory" ? (
                 THEORY_QUESTIONS.map(q => (
                   <button
                     key={q.id}
@@ -2592,6 +2986,28 @@ export default function App() {
                     <ChevronRight className={`w-4 h-4 ${activeTheoryId === q.id ? "text-brand" : "text-gray-300"}`} />
                   </button>
                 ))
+              ) : (
+                SCENARIO_QUESTIONS.map(q => (
+                  <button
+                    key={q.id}
+                    onClick={() => setActiveScenarioId(q.id)}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
+                      activeScenarioId === q.id 
+                        ? "border-brand bg-accent/10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" 
+                        : "border-transparent hover:border-brand/20 hover:bg-bg"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`${activeScenarioId === q.id ? "text-brand" : "text-gray-400"}`}>
+                        <Workflow className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-sm">{q.title}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 ${activeScenarioId === q.id ? "text-brand" : "text-gray-300"}`} />
+                  </button>
+                ))
               )}
             </div>
           </div>
@@ -2601,7 +3017,9 @@ export default function App() {
               <p className="text-[10px] leading-relaxed opacity-70">
                 {activeSection === "coding" 
                   ? "Scroll through the visualization to understand the internal state changes of the Stream API."
-                  : "Try to explain these concepts in your own words before reading the answer."}
+                  : activeSection === "theory"
+                  ? "Try to explain these concepts in your own words before reading the answer."
+                  : "These questions test your ability to explain complex choices you made in production."}
               </p>
             </div>
           </div>
@@ -2620,7 +3038,7 @@ export default function App() {
               >
                 <CodingView question={activeCoding} />
               </motion.div>
-            ) : (
+            ) : activeSection === "theory" ? (
               <motion.div
                 key={`theory-${activeTheoryId}`}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -2629,6 +3047,16 @@ export default function App() {
                 className="p-6 md:p-12 max-w-4xl mx-auto"
               >
                 <TheoryView question={activeTheory} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`scenario-${activeScenarioId}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="pb-24"
+              >
+                <CodingView question={activeScenario} />
               </motion.div>
             )}
           </AnimatePresence>
